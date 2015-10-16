@@ -93,7 +93,7 @@ extern "C" double calcfn_gamma(double x)
 extern "C" double calcfn_rand(double min, double max)
 {
 	static std::mt19937 engine{std::random_device{}()};
-	if (max > min)
+	if (max < min)
 		return std::numeric_limits<double>::quiet_NaN();
 	std::uniform_real_distribution<> dist{min, max};
 	return dist(engine);

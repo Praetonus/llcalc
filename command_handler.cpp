@@ -445,9 +445,8 @@ void execute_def(std::vector<std::string>& args, std::map<std::string, double>& 
 		std::cout << "Warning : redefining function " << fn_name << '\n';
 		auto fn = fun_it->second;
 		auto def_fun_it = functions.find(fn);
-		assert(fn->type != FunctionType::userdef || def_fun_it != std::end(functions));
 		fun_env.erase(fun_it);
-		if (fn->type != FunctionType::userdef)
+		if (def_fun_it != std::end(functions))
 			functions.erase(def_fun_it);
 	}
 

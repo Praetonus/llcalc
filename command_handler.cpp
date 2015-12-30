@@ -21,7 +21,9 @@ namespace
 
 std::map<std::string, double> builtin_vars
 	{{"pi", std::acos(-1)},
-	 {"e", std::exp(1)}};
+	 {"e", std::exp(1)},
+	 {"sqrt2", std::sqrt(2)},
+	 {"phi", (1.0 + std::sqrt(5)) / 2.0}};
 
 std::map<std::string, std::size_t> builtin_funs
 	{{"sqrt", 0},
@@ -139,7 +141,9 @@ char const* import_doc()
 	"\tBuiltins list :\n"
 	"\t\tNumbers :\n"
 	"\t\t\tpi : Archimedes' constant.\n"
-	"\t\t\te  : Euler's number.\n"
+	"\t\t\te : Euler's number.\n"
+	"\t\t\tphi : Golden ratio.\n"
+	"\t\t\tsqrt2 : Square root of 2.\n"
 	"\t\tFunctions :\n"
 	"\t\t\tabs(x) : Absolute value of x.\n"
 	"\t\t\tsqrt(x) : Square root of x.\n"
@@ -484,7 +488,7 @@ void execute_help(std::string const* arg)
 			"\tenv :\n"
 			"\t\tShow current environment.\n"
 			"\timport :\n"
-			"\t\tImport commonly used variables in the environment.\n"
+			"\t\tImport common mathematical stuff in the environment.\n"
 			"\tdel :\n"
 			"\t\tDelete elements from the environment.\n"
 			"\tdef :\n"

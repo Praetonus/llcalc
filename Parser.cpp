@@ -7,7 +7,9 @@
 #include "Lexer.hpp"
 #include "syntax_tree.hpp"
 
-static std::map<char, OpCarac> operators
+static std::vector<char> unary_operators{'-'};
+
+static std::map<char, OpCarac> binary_operators
 	{{'=', {5, Associativity::right}},
 	 {'+', {10, Associativity::left}},
 	 {'-', {10, Associativity::left}},
@@ -18,16 +20,16 @@ static std::map<char, OpCarac> operators
 
 int operator_precedence(char op)
 {
-	if (operators.find(op) == std::end(operators))
+	if (binary_operators.find(op) == std::end(binary_operators))
 		return -1;
-	return operators[op].precedence;
+	return binary_operators[op].precedence;
 }
 
 Associativity operator_associativity(char op)
 {
-	if (operators.find(op) == std::end(operators))
+	if (binary_operators.find(op) == std::end(binary_operators))
 		return Associativity::unknown;
-	return operators[op].associativity;
+	return binary_operators[op].associativity;
 }
 
 Parser::Parser(std::map<std::string, double>& vars, std::map<std::string, Function*>& funs)
@@ -56,7 +58,7 @@ ExprNode Parser::parse_function_body(Lexer& lex, Function& fn)
 
 ExprNode Parser::parse_expr_(Function* fn)
 {
-	return parse_binary_rhs_(0, parse_top_(fn), fn);
+	return parse_binary_rhs_(0, parse_unary_(fn), fn);
 }
 
 ExprNode Parser::parse_top_(Function* fn)
@@ -67,8 +69,6 @@ ExprNode Parser::parse_top_(Function* fn)
 			return parse_number_();
 		case Token::identifier:
 			return parse_identifier_(fn);
-		case '-':
-			return parse_unary_(fn);
 		case '(':
 			return parse_paren_(fn);
 		default:
@@ -120,9 +120,12 @@ ExprNode Parser::parse_identifier_(Function* fn)
 
 ExprNode Parser::parse_unary_(Function* fn)
 {
+	if (!is_in(cur_tok_, unary_operators))
+		return parse_top_(fn);
+
 	auto un_op = cur_tok_;
 	cur_tok_ = lex_->next();
-	return std::make_unique<UnaryExprTree>(un_op, parse_top_(fn));
+	return std::make_unique<UnaryExprTree>(un_op, parse_unary_(fn));
 }
 
 ExprNode Parser::parse_paren_(Function* fn)
@@ -145,7 +148,7 @@ ExprNode Parser::parse_binary_rhs_(int expr_prec, ExprNode lhs, Function* fn)
 		auto bin_op = cur_tok_;
 		cur_tok_ = lex_->next();
 
-		auto rhs = parse_top_(fn);
+		auto rhs = parse_unary_(fn);
 		auto next_op = cur_tok_;
 		auto next_prec = operator_precedence(next_op);
 		while (cur_prec < next_prec ||

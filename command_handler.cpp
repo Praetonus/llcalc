@@ -104,8 +104,6 @@ extern "C" double calcfn_rand(double min, double max)
 namespace
 {
 
-std::map<Function*, std::unique_ptr<Function>> functions;
-
 char const* help_doc()
 {
 	return
@@ -430,6 +428,8 @@ void execute_del(std::vector<std::string> const& args, std::map<std::string, dou
 void execute_def(std::vector<std::string>& args, std::map<std::string, double>& var_env,
                  std::map<std::string, Function*>& fun_env, Parser& par, Lexer& lex)
 {
+	static std::map<Function*, std::unique_ptr<Function>> functions;
+
 	auto fn_name = args[0];
 	args.erase(std::begin(args));
 	std::unique_ptr<Function> function{new Function{nullptr, std::move(args), {},

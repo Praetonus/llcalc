@@ -40,37 +40,37 @@ ExprNode Parser::parse(Lexer& lex)
 {
 	lex_ = &lex;
 	cur_tok_ = lex_->next();
-	auto ast = parse_expr_(nullptr);
+	auto ast = parse_expr_(nullptr, nullptr);
 	if (cur_tok_ != Token::eof)
 		throw InvalidInput{"Ill-formed expression"};
 	return ast;
 }
 
-ExprNode Parser::parse_function_body(Lexer& lex, Function& fn)
+ExprNode Parser::parse_function_body(Lexer& lex, std::string const& fn_name, Function& fn)
 {
 	lex_ = &lex;
 	cur_tok_ = lex_->next();
-	auto body = parse_expr_(&fn);
+	auto body = parse_expr_(&fn_name, &fn);
 	if (cur_tok_ != Token::eof)
 		throw InvalidInput{"Ill-formed expression"};
 	return body;
 }
 
-ExprNode Parser::parse_expr_(Function* fn)
+ExprNode Parser::parse_expr_(std::string const* fn_name, Function* fn)
 {
-	return parse_binary_rhs_(0, parse_unary_(fn), fn);
+	return parse_binary_rhs_(0, parse_unary_(fn_name, fn), fn_name, fn);
 }
 
-ExprNode Parser::parse_top_(Function* fn)
+ExprNode Parser::parse_top_(std::string const* fn_name, Function* fn)
 {
 	switch (cur_tok_)
 	{
 		case Token::number:
 			return parse_number_();
 		case Token::identifier:
-			return parse_identifier_(fn);
+			return parse_identifier_(fn_name, fn);
 		case '(':
-			return parse_paren_(fn);
+			return parse_paren_(fn_name, fn);
 		default:
 			throw InvalidInput{"Ill-formed expression"};
 	}
@@ -83,7 +83,7 @@ ExprNode Parser::parse_number_()
 	return std::move(res);
 }
 
-ExprNode Parser::parse_identifier_(Function* fn)
+ExprNode Parser::parse_identifier_(std::string const* fn_name, Function* fn)
 {
 	auto id = lex_->identifier();
 	cur_tok_ = lex_->next();
@@ -93,7 +93,7 @@ ExprNode Parser::parse_identifier_(Function* fn)
 		std::vector<ExprNode> fn_params;
 		while (cur_tok_ != ')')
 		{
-			auto param = parse_expr_(fn);
+			auto param = parse_expr_(fn_name, fn);
 			fn_params.emplace_back(std::move(param));
 			if (cur_tok_ != ',' && cur_tok_ != ')')
 				throw InvalidInput{"Ill-formed expression"};
@@ -106,7 +106,7 @@ ExprNode Parser::parse_identifier_(Function* fn)
 		}
 		cur_tok_ = lex_->next();
 		auto fun_it = funs_.find(id);
-		if (fn && fun_it != std::end(funs_) && fun_it->first == id)
+		if (fn_name && fun_it != std::end(funs_) && *fn_name == id)
 			throw InvalidInput{"Recursive function calls are not allowed"};
 		return std::make_unique<FunctionCallTree>(std::move(id), std::move(fn_params), funs_, vars_);
 	}
@@ -118,27 +118,27 @@ ExprNode Parser::parse_identifier_(Function* fn)
 	return std::make_unique<IdentifierTree>(std::move(id), vars_, funs_);
 }
 
-ExprNode Parser::parse_unary_(Function* fn)
+ExprNode Parser::parse_unary_(std::string const* fn_name, Function* fn)
 {
 	if (!is_in(cur_tok_, unary_operators))
-		return parse_top_(fn);
+		return parse_top_(fn_name, fn);
 
 	auto un_op = cur_tok_;
 	cur_tok_ = lex_->next();
-	return std::make_unique<UnaryExprTree>(un_op, parse_unary_(fn));
+	return std::make_unique<UnaryExprTree>(un_op, parse_unary_(fn_name, fn));
 }
 
-ExprNode Parser::parse_paren_(Function* fn)
+ExprNode Parser::parse_paren_(std::string const* fn_name, Function* fn)
 {
 	cur_tok_ = lex_->next();
-	auto ex = parse_expr_(fn);
+	auto ex = parse_expr_(fn_name, fn);
 	if (cur_tok_ != ')')
 		throw InvalidInput{"Ill-formed expression : expected ')'"};
 	cur_tok_ = lex_->next();
 	return ex;
 }
 
-ExprNode Parser::parse_binary_rhs_(int expr_prec, ExprNode lhs, Function* fn)
+ExprNode Parser::parse_binary_rhs_(int expr_prec, ExprNode lhs, std::string const* fn_name, Function* fn)
 {
 	while (1)
 	{
@@ -148,13 +148,13 @@ ExprNode Parser::parse_binary_rhs_(int expr_prec, ExprNode lhs, Function* fn)
 		auto bin_op = cur_tok_;
 		cur_tok_ = lex_->next();
 
-		auto rhs = parse_unary_(fn);
+		auto rhs = parse_unary_(fn_name, fn);
 		auto next_op = cur_tok_;
 		auto next_prec = operator_precedence(next_op);
 		while (cur_prec < next_prec ||
 			   (operator_associativity(next_op) == Associativity::right && cur_prec == next_prec))
 		{
-			rhs = parse_binary_rhs_(next_prec, std::move(rhs), fn);
+			rhs = parse_binary_rhs_(next_prec, std::move(rhs), fn_name, fn);
 			next_op = cur_tok_;
 			next_prec = operator_precedence(next_op);
 		}

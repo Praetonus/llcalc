@@ -434,7 +434,7 @@ void execute_def(std::vector<std::string>& args, std::map<std::string, double>& 
 	args.erase(std::begin(args));
 	std::unique_ptr<Function> function{new Function{nullptr, std::move(args), {},
 	                                   llvm::Intrinsic::not_intrinsic, FunctionType::userdef}};
-	function->body = par.parse_function_body(lex, *function);
+	function->body = par.parse_function_body(lex, fn_name, *function);
 
 	auto var_it = var_env.find(fn_name);
 	if (var_it != std::end(var_env))

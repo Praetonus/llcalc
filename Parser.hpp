@@ -42,16 +42,16 @@ class Parser
 	~Parser() = default;
 
 	ExprNode parse(Lexer&);
-	ExprNode parse_function_body(Lexer&, Function&);
+	ExprNode parse_function_body(Lexer&, std::string const&, Function&);
 
 	private:
-	ExprNode parse_expr_(Function*);
-	ExprNode parse_top_(Function*);
+	ExprNode parse_expr_(std::string const*, Function*);
+	ExprNode parse_top_(std::string const*, Function*);
 	ExprNode parse_number_();
-	ExprNode parse_identifier_(Function*);
-	ExprNode parse_unary_(Function*);
-	ExprNode parse_paren_(Function*);
-	ExprNode parse_binary_rhs_(int, ExprNode, Function*);
+	ExprNode parse_identifier_(std::string const*, Function*);
+	ExprNode parse_unary_(std::string const*, Function*);
+	ExprNode parse_paren_(std::string const*, Function*);
+	ExprNode parse_binary_rhs_(int, ExprNode, std::string const*, Function*);
 
 	std::map<std::string, double>& vars_;
 	std::map<std::string, Function*>& funs_;
